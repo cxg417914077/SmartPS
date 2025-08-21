@@ -1,36 +1,133 @@
+/* 请用以下完整内容替换该文件的所有内容 */
+
+/* --- 1. 认证页面的全屏居中布局 (保持不变) --- */
+.auth-page-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.auth-logo {
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #213547;
+}
+
+/* --- 2. 静态页面（主页、价格页等）的基础容器 --- */
 .page-container {
   padding: 4rem 2rem;
   text-align: center;
   max-width: 1280px;
   margin: 0 auto;
 }
-.hero-section h1 {
-  font-size: 3.5rem;
-  margin-bottom: 1rem;
-  color: #213547;
+
+/* --- 3. 【核心修改】美化主页 (Hero Section) --- */
+.hero-wrapper {
+  position: relative;
+  overflow: hidden; /* 隐藏超出范围的装饰形状 */
+  background: radial-gradient(circle at 10% 20%, rgb(233, 233, 245) 0%, rgb(255, 255, 255) 90%);
 }
+
+.hero-section {
+  position: relative; /* 确保内容在装饰形状之上 */
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100vh - 140px); /* 视口高度减去导航和页脚的大概高度 */
+}
+
+.hero-section h1 {
+  font-size: 4rem; /* 增大标题字号 */
+  font-weight: 800; /* 加粗 */
+  margin-bottom: 1.5rem;
+  color: #1a202c; /* 更深的黑色 */
+  line-height: 1.2;
+}
+
 .hero-section p {
-  font-size: 1.2rem;
-  color: #555;
-  margin-bottom: 2rem;
+  font-size: 1.25rem;
+  color: #4a5568; /* 柔和的灰色 */
+  margin-bottom: 2.5rem;
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
 }
+
 .cta-button {
   display: inline-block;
-  padding: 0.8rem 1.8rem;
-  border-radius: 8px;
+  padding: 1rem 2.5rem; /* 增大按钮尺寸 */
+  border-radius: 50px; /* 圆角按钮 */
   text-decoration: none;
   font-weight: bold;
   color: #fff;
   background: linear-gradient(90deg, #646cff, #535bf2);
-  transition: transform 0.2s ease;
+  transition: all 0.3s ease;
   border: none;
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3), 0 4px 6px -2px rgba(99, 102, 241, 0.2);
 }
-.cta-button:hover {
-  transform: scale(1.05);
+
+.cta-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  border-color: transparent;
+  box-shadow: none;
 }
+
+.cta-button:hover:not(:disabled) {
+  transform: translateY(-3px); /* 向上浮动效果 */
+  box-shadow: 0 15px 25px -5px rgba(99, 102, 241, 0.4), 0 8px 10px -6px rgba(99, 102, 241, 0.3);
+}
+
+/* --- 4. 【新增】背景装饰形状样式 --- */
+.background-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px); /* 模糊效果 */
+  z-index: 1;
+}
+.shape1 {
+  width: 400px;
+  height: 400px;
+  background: rgba(129, 140, 248, 0.2);
+  top: -100px;
+  left: -100px;
+}
+.shape2 {
+  width: 500px;
+  height: 500px;
+  background: rgba(167, 139, 250, 0.2);
+  bottom: -150px;
+  right: -150px;
+}
+
+/* --- 5. 【新增】入场动画 --- */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.8s ease-out forwards;
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+.delay-1 { animation-delay: 0.2s; opacity: 0; /* 初始状态为透明 */}
+.delay-2 { animation-delay: 0.4s; opacity: 0; /* 初始状态为透明 */}
+
+
+/* --- 6. 其他页面的样式 (卡片、表单等) --- */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -38,65 +135,22 @@
   margin-top: 3rem;
   text-align: left;
 }
-.card {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-.card.recommended {
-  border-color: #646cff;
-  transform: scale(1.02);
-}
-.card h3 {
-  margin-top: 0;
-  color: #213547;
-}
-.card .price {
-  font-size: 2rem;
-  font-weight: bold;
-  margin: 1rem 0;
-}
-.card ul {
-  list-style: none;
-  padding: 0;
-  color: #555;
-}
-.card ul li {
-  margin-bottom: 0.5rem;
-  padding-left: 1.5rem;
-  position: relative;
-}
-.card ul li::before {
-  content: '✓';
-  color: #646cff;
-  position: absolute;
-  left: 0;
-}
-.form-container {
-  max-width: 400px;
-  margin: 0 auto;
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-.form-container form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.form-container input {
-  padding: 0.8rem;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  color: #213547;
-  font-size: 1rem;
-}
-.form-container p {
-  margin-top: 1.5rem;
-  color: #555;
-}
+/* ... (其余 .card, .form-container 等样式保持不变) ... */
+.card { background-color: #ffffff; padding: 2rem; border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+.card.recommended { border-color: #646cff; transform: scale(1.02); }
+.card h3 { margin-top: 0; color: #213547; }
+.card .price { font-size: 2rem; font-weight: bold; margin: 1rem 0; }
+.card ul { list-style: none; padding: 0; color: #555; }
+.card ul li { margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative; }
+.card ul li::before { content: '✓'; color: #646cff; position: absolute; left: 0; }
+.form-container { width: 100%; max-width: 400px; margin: 0 auto; background-color: #ffffff; padding: 2.5rem; border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05); text-align: center; }
+.form-container h2 { margin-top: 0; margin-bottom: 2rem; }
+.form-container form { display: flex; flex-direction: column; gap: 1.2rem; }
+.form-container input { padding: 0.8rem; border-radius: 6px; border: 1px solid #ccc; background-color: #fff; color: #213547; font-size: 1rem; }
+.form-container p { margin-top: 1.5rem; color: #555; }
+.input-group { display: flex; gap: 0.5rem; }
+.input-group input { flex-grow: 1; }
+.send-code-btn { padding: 0 1rem; flex-shrink: 0; background-color: #f0f0f0; border: 1px solid #ccc; color: #333; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; }
+.send-code-btn:hover:not(:disabled) { background-color: #e0e0e0; }
+.send-code-btn:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; border-color: #ced4da; }
+.error-message { color: #ef4444; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem; text-align: center; font-size: 0.9rem; }

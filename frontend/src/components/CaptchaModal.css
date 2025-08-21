@@ -1,0 +1,51 @@
+/* 请将以下完整内容创建并保存到该文件中 */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px); /* 添加背景模糊效果，更现代 */
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: auto;
+  min-width: 320px; /* 确保在 reCAPTCHA 加载时不会太窄 */
+}
+
+.modal-content h4 {
+  margin: 0;
+  color: #213547;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* 模态框内的关闭按钮，使用通用按钮样式 */
+.modal-content .close-btn {
+  /* 这个类名现在可以继承 .cta-button 的大部分样式 */
+  /* 我们在这里只进行微调 */
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  width: 100%;
+}
+.modal-content .close-btn:hover {
+  background-color: #e0e0e0;
+  border-color: #bbb;
+  transform: none; /* 取消放大效果 */
+  opacity: 1;
+}
