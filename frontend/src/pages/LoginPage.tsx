@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config'; // 1. 导入基础 URL
 import './PageStyles.css';
 
 export function LoginPage() {
@@ -20,7 +21,8 @@ export function LoginPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/login', { // 替换为你的后端 API 地址
+      // 2. 更新 fetch 请求地址
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

@@ -1,12 +1,13 @@
 /* 请用以下完整内容替换该文件的所有内容 */
 
 import { useState, ChangeEvent, FormEvent } from 'react';
+import { API_BASE_URL } from '../config'; // 1. 导入基础 URL
 
 // 为 SSE 流返回的步骤数据定义一个类型接口
 interface AgentStep {
   type: 'thought' | 'observation' | 'final_output' | 'error' | 'final_image';
-  content: string; // 对于 final_image, content 将是 base64 字符串
-  format?: string; // 图片格式, e.g., 'image/jpeg'
+  content: string;
+  format?: string;
 }
 
 export function AgentPage(): JSX.Element {
@@ -22,11 +23,9 @@ export function AgentPage(): JSX.Element {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-
       if (inputImageUrl) {
         URL.revokeObjectURL(inputImageUrl);
       }
-
       const newImageUrl = URL.createObjectURL(file);
       setInputImageUrl(newImageUrl);
       setOutputImageUrl(null);
@@ -49,9 +48,14 @@ export function AgentPage(): JSX.Element {
     formData.append('file', selectedFile);
 
     try {
-      const response = await fetch('http://localhost:8001/agent/image_process', {
+      // 2. 更新 fetch 请求地址
+      const response = await fetch(`${API_BASE_URL}/agent/image_process`, {
         method: 'POST',
         body: formData,
+        // 如果你的 agent 接口需要认证，你需要在这里添加 Authorization 头
+        // headers: {
+        //   'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        // }
       });
 
       if (!response.body) {
