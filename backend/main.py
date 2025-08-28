@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-import os
 import json
 import base64
 from io import BytesIO
@@ -16,6 +15,8 @@ from langchain import hub
 from langchain.agents import create_react_agent, AgentExecutor
 from langchain_mcp_tools.langchain_mcp_tools import convert_mcp_to_langchain_tools
 
+# Import auth modules
+from app.api.routes.auth import router as auth_router
 
 # 1. 加载环境变量
 load_dotenv()
@@ -59,6 +60,8 @@ async def lifespan(app: FastAPI):
 # 使用 lifespan 初始化 FastAPI 应用
 app = FastAPI(lifespan=lifespan)
 
+# Include auth routes
+app.include_router(auth_router)
 
 # --- 图片处理工具定义 ---
 # 使用 @tool 装饰器可以非常方便地将一个函数变成 LangChain 工具
@@ -82,12 +85,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-
-
-
-
 
 
 # --- API 路由 ---
@@ -154,3 +151,8 @@ async def image_process_agent(
             yield json.dumps({"type": "end"})
 
     return EventSourceResponse(event_generator())
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8081)
