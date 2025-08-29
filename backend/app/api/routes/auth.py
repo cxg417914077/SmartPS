@@ -7,35 +7,12 @@ from backend.app.crud.user import UserCRUD
 from backend.app.api.deps import SessionDep
 from backend.app.utils.jwt_token import generate_jwt_token
 from pydantic import BaseModel
+from backend.app.core.config import settings
 
 
 router = APIRouter()
 
 
-"""
-## 1. reCAPTCHA 验证 (可选)
-
-*   **端点**: `/api/verify-captcha`
-*   **方法**: `POST`
-*   **请求体**:
-    ```json
-    {
-      "email": "string",        // 用户邮箱
-      "captchaToken": "string"  // reCAPTCHA v2 验证成功后获取的 token
-    }
-    ```
-*   **响应**:
-    *   **成功**: `200 OK`
-        ```json
-        { "message": "人机验证通过。" }
-        ```
-    *   **失败**: `400 Bad Request`
-        ```json
-        { "message": "人机验证失败，请重试。" }
-        ```
-
----
-"""
 class CaptchaVerification(BaseModel):
     email: EmailStr
     captchaToken: str
@@ -45,10 +22,8 @@ async def verify_captcha(request: CaptchaVerification) -> dict:
     """
     Captcha verification endpoint
     """
-    secret = "6Levxq0rAAAAAAkbPzH2EEKDckO9YT8-Xc0RAYaD"
-    url = "https://www.google.com/recaptcha/api/siteverify"
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, data={"secret": secret, "response": request.captchaToken}) as response:
+        async with session.post(settings.VERIFICATION_ENDPOINT, data={"secret": settings.RE_CAPTCHA_KEY, "response": request.captchaToken}) as response:
             response_data = await response.json()
             if response_data["success"]:
                 return {"message": "人机验证通过。"}
