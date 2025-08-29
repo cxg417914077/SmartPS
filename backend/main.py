@@ -3,6 +3,9 @@ import json
 import base64
 from io import BytesIO
 from dotenv import load_dotenv
+import sys
+# 添加系统目录
+sys.path.append("../")
 
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
