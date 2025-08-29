@@ -1,19 +1,15 @@
 import secrets
-import warnings
 from typing import Annotated, Any, Literal
 
 from pydantic import (
     AnyUrl,
     BeforeValidator,
-    EmailStr,
     HttpUrl,
     PostgresDsn,
     computed_field,
-    model_validator,
 )
-from pydantic_core import MultiHostUrl
+from pydantic_core._pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing_extensions import Self
 
 
 def parse_cors(v: Any) -> list[str] | str:
@@ -27,7 +23,7 @@ def parse_cors(v: Any) -> list[str] | str:
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         # Use top level .env file (one level above ./backend/)
-        env_file="../.env",
+        env_file=".env",
         env_ignore_empty=True,
         extra="ignore",
     )
@@ -42,13 +38,6 @@ class Settings(BaseSettings):
         list[AnyUrl] | str, BeforeValidator(parse_cors)
     ] = []
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def all_cors_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
-            self.FRONTEND_HOST
-        ]
-
     # PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
     POSTGRES_SERVER: str = "localhost"
@@ -56,6 +45,10 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "admin"
     POSTGRES_PASSWORD: str = "admin"
     POSTGRES_DB: str = "test_db"
+
+    EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
+    RE_CAPTCHA_KEY: str | None = None
+    VERIFICATION_ENDPOINT: str = ""
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -69,44 +62,19 @@ class Settings(BaseSettings):
             path=self.POSTGRES_DB,
         )
 
-    SMTP_TLS: bool = True
-    SMTP_SSL: bool = False
-    SMTP_PORT: int = 587
-    SMTP_HOST: str | None = None
-    SMTP_USER: str | None = None
-    SMTP_PASSWORD: str | None = None
-    EMAILS_FROM_EMAIL: EmailStr | None = None
-    EMAILS_FROM_NAME: EmailStr | None = None
+    # 邮件相关
+    SENDER_EMAIL: str
+    SENDER_PASSWORD: str
 
-    # @model_validator(mode="after")
-    # def _set_default_emails_from(self) -> Self:
-    #     if not self.EMAILS_FROM_NAME:
-    #         self.EMAILS_FROM_NAME = self.PROJECT_NAME
-    #     return self
+    APP_NAME: str = "SmartPS"
+    # redis
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str | None = None
 
-    EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def emails_enabled(self) -> bool:
-        return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
-
-    EMAIL_TEST_USER: EmailStr = "test@example.com"
-    #FIRST_SUPERUSER: EmailStr
-    #FIRST_SUPERUSER_PASSWORD: str
-    RE_CAPTCHA_KEY: str | None = None
-    VERIFICATION_ENDPOINT: str = ""
-
-    def _check_default_secret(self, var_name: str, value: str | None) -> None:
-        if value == "changethis":
-            message = (
-                f'The value of {var_name} is "changethis", '
-                "for security, please change it, at least for deployments."
-            )
-            if self.ENVIRONMENT == "local":
-                warnings.warn(message, stacklevel=1)
-            else:
-                raise ValueError(message)
+    SECRET_KEY: str
+    ALGORITHM: str
 
 
 settings = Settings()  # type: ignore

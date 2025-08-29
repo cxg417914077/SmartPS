@@ -8,8 +8,13 @@ docker run --name smartps-db \
   -e POSTGRES_DB=test_db \
   -p 5432:5432 \
   -d postgres:15
+
+docker run --name smartps-redis \
+  -p 6379:6379 \
+  -d redis:latest
 ```
 
+apt-get install -y libpq-dev
 
 alembic revision --autogenerate -m "initial migration"
 

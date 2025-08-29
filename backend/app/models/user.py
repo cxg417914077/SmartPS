@@ -14,8 +14,11 @@ class User(SQLModel):
 
 
 class UserLogin(User):
-    code: str = Field(nullable=False)
     password: str = Field(nullable=False)
+
+
+class UserRegister(UserLogin):
+    code: str = Field(nullable=False)
 
 
 class UserTable(User, table=True):

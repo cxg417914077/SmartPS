@@ -2,9 +2,12 @@ import aiohttp
 from fastapi import APIRouter, HTTPException, status
 from pydantic import EmailStr
 
-from backend.app.models.user import UserLogin
+from backend.app.core.redis_tool import cache
+from backend.app.models.base import MessageResponse, LoginResponse
+from backend.app.models.user import UserLogin, UserRegister
 from backend.app.crud.user import UserCRUD
 from backend.app.api.deps import SessionDep
+from backend.app.utils.email import send_email
 from backend.app.utils.jwt_token import generate_jwt_token
 from pydantic import BaseModel
 from backend.app.core.config import settings
@@ -16,6 +19,10 @@ router = APIRouter()
 class CaptchaVerification(BaseModel):
     email: EmailStr
     captchaToken: str
+
+
+class EmailRequest(BaseModel):
+    email: EmailStr
 
 @router.post("/api/verify-captcha")
 async def verify_captcha(request: CaptchaVerification) -> dict:
@@ -30,11 +37,14 @@ async def verify_captcha(request: CaptchaVerification) -> dict:
             return {"message": "人机验证失败，请重试。"}
 
 
-@router.post("/api/register")
-async def register(user_data: UserLogin, db: SessionDep):
+@router.post("/api/register", response_model=LoginResponse)
+async def register(user_data: UserRegister, db: SessionDep):
     """
     User registration endpoint
     """
+    # 检查邮箱验证码
+    if not cache.verify_otp(user_data.email, user_data.code):
+        return {"message": "验证码错误"}
     # 检查用户是否已存在
     existing_user = UserCRUD.get_user_by_email(db, user_data.email)
     if existing_user:
@@ -55,13 +65,19 @@ async def register(user_data: UserLogin, db: SessionDep):
         )
 
 
-# 发送邮件code
-@router.post("/api/send_verification_code")
-async def send_verification_code(email: EmailStr) -> dict:
-    return {"message": "验证码已发送，请在5分钟内使用。"}
+@router.post("/api/send-verification-code", response_model=MessageResponse)
+async def send_verification_code(email: EmailRequest) -> dict:
+    email = email.email
+    if cache.can_send_otp(email):
+        # 生成并存储验证码
+        otp_code, _ = send_email(email)
+        cache.store_otp(email, otp_code)
+        return {"message": "验证码已发送，请在5分钟内使用。"}
+    else:
+        return {"message": "请求过于频繁，请稍后再试"}
 
 
-@router.post("/api/login")
+@router.post("/api/login", response_model=LoginResponse)
 async def login(user_data: UserLogin, db: SessionDep):
     """
     User login endpoint

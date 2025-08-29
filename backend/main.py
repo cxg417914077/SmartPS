@@ -4,8 +4,9 @@ import base64
 from io import BytesIO
 from dotenv import load_dotenv
 import sys
+import os
 # 添加系统目录
-sys.path.append("../")
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,7 +23,7 @@ from langchain_mcp_tools.langchain_mcp_tools import convert_mcp_to_langchain_too
 from app.api.routes.auth import router as auth_router
 
 # 1. 加载环境变量
-load_dotenv()
+load_dotenv(".env")
 
 
 mcp_configs = {
