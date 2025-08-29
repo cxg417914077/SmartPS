@@ -7,7 +7,7 @@ import { CaptchaModal } from '../components/CaptchaModal';
 import { API_BASE_URL } from '../config'; // 1. 导入基础 URL
 import './PageStyles.css';
 
-const RECAPTCHA_SITE_KEY = "6Levxq0rAAAAAOv2YrOyLx4PfNtCntmxXcdaaLeF"; // <--- 请务必替换为你的真实站点密钥
+const RECAPTCHA_SITE_KEY = "6LfcArYrAAAAAIqlzFHhh2AyLpbec5UZvpa0oNt8"; // <--- 请务必替换为你的真实站点密钥
 
 export function SignUpPage() {
   const [email, setEmail] = useState('');
