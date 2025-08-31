@@ -8,15 +8,15 @@ from io import BytesIO
 from backend.app.core.config import settings
 
 
-def image_edit(image_url: str, prompt: str):
+def image_edit(image_url: str, prompt: str, image_size: str):
     common_headers = {
         "Authorization": f"Bearer {settings.MODELSCOPE_API_KEY}",
         "Content-Type": "application/json",
     }
     # 读取图片获取分辨率
-    image = Image.open(image_url)
-    width, height = image.size
-    image.close()
+    # image = Image.open(image_url)
+    # width, height = image.size
+    # image.close()
 
     response = requests.post(
         f"{settings.MODELSCOPE_API_URL}v1/images/generations",
@@ -25,7 +25,7 @@ def image_edit(image_url: str, prompt: str):
             "model": "Qwen/Qwen-Image-Edit",
             "prompt": prompt,
             "image_url": image_url,
-            "size": f"{width}x{height}"
+            "size": image_size
         }, ensure_ascii=False).encode('utf-8')
     )
 

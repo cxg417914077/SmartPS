@@ -1,22 +1,20 @@
-import base64
 from dotenv import load_dotenv
 import sys
 import os
 from pathlib import Path
 
-from backend.agent.tools import image_edit
-
 # 添加系统目录
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from backend.agent.tools import image_edit
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from backend.app.core.config import settings
+from PIL import Image
 
 
 # Import auth modules
 from app.api.routes.auth import router as auth_router
-from backend.agent.agent import agent
 
 # 1. 加载环境变量
 load_dotenv(".env")
@@ -68,7 +66,13 @@ async def image_process_agent(
     with open(file_path, "wb") as f:
         f.write(image_bytes)
 
-    image_data = image_edit(file_path, prompt)
+    img = Image.open(file_path)
+    width, height = img.size
+    img.close()
+
+    image_url = f"{settings.HOST}/images/{image_path}"
+
+    image_data = image_edit(image_url, prompt, f"{width}x{height}")
     os.remove(file_path)
 
     return {"image": image_data}
