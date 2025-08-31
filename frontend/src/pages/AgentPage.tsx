@@ -1,13 +1,12 @@
-/* 请用以下完整内容替换该文件的所有内容 */
-
 import { useState, ChangeEvent, FormEvent } from 'react';
-import { API_BASE_URL } from '../config'; // 1. 导入基础 URL
+// 假设您的 config 文件仍然在正确的位置
+import { API_BASE_URL } from '../config';
 
-// 为 SSE 流返回的步骤数据定义一个类型接口
+// 为日志窗口定义一个类型接口
+// 注意：由于新接口不返回思考和观察步骤，我们主要用它来显示最终结果或错误信息
 interface AgentStep {
-  type: 'thought' | 'observation' | 'final_output' | 'error' | 'final_image';
+  type: 'final_output' | 'error' | 'info';
   content: string;
-  format?: string;
 }
 
 export function AgentPage(): JSX.Element {
@@ -17,18 +16,22 @@ export function AgentPage(): JSX.Element {
   const [outputImageUrl, setOutputImageUrl] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  // steps 现在用于显示状态信息，而不是详细的 Agent 步骤
   const [steps, setSteps] = useState<AgentStep[]>([]);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      // 清理旧的 URL 对象以避免内存泄漏
       if (inputImageUrl) {
         URL.revokeObjectURL(inputImageUrl);
       }
       const newImageUrl = URL.createObjectURL(file);
       setInputImageUrl(newImageUrl);
+      // 重置输出图片和日志
       setOutputImageUrl(null);
+      setSteps([]);
     }
   };
 
@@ -40,7 +43,7 @@ export function AgentPage(): JSX.Element {
     }
 
     setIsLoading(true);
-    setSteps([]);
+    setSteps([{ type: 'info', content: '智能体已启动，正在处理图片...' }]); // 提供初始状态
     setOutputImageUrl(null);
 
     const formData = new FormData();
@@ -48,68 +51,52 @@ export function AgentPage(): JSX.Element {
     formData.append('file', selectedFile);
 
     try {
-      // 2. 更新 fetch 请求地址
+      // API 请求地址保持不变
       const response = await fetch(`${API_BASE_URL}/agent/image_process`, {
         method: 'POST',
         body: formData,
-        // 如果你的 agent 接口需要认证，你需要在这里添加 Authorization 头
+        // 如果需要，请取消注释 headers
         // headers: {
         //   'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         // }
       });
 
-      if (!response.body) {
-        throw new Error("Response body is null");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`服务器错误: ${response.status} ${errorText}`);
       }
 
-      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+      // **核心修改：直接解析 JSON 响应，而不是读取流**
+      const data: { image: string } = await response.json();
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        const lines = value.split('\n\n').filter(line => line.trim() !== '');
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            try {
-              const jsonString = line.substring(5);
-              const data: AgentStep = JSON.parse(jsonString);
-
-              if (data.type === 'end') {
-                setIsLoading(false);
-                return;
-              } else if (data.type === 'final_image' && data.format) {
-                const imageUrl = `data:${data.format};base64,${data.content}`;
-                setOutputImageUrl(imageUrl);
-              } else {
-                setSteps(prevSteps => [...prevSteps, data]);
-              }
-            } catch (parseError) {
-              console.error("解析 SSE 数据块失败:", parseError, "原始数据:", line);
-            }
-          }
-        }
+      if (data && data.image) {
+        // 从选择的文件中获取正确的 MIME 类型
+        const imageFormat = selectedFile.type;
+        const imageUrl = `data:${imageFormat};base64,${data.image}`;
+        setOutputImageUrl(imageUrl);
+        setSteps(prevSteps => [...prevSteps, { type: 'final_output', content: '图片处理成功！' }]);
+      } else {
+        throw new Error("从服务器返回的数据格式不正确。");
       }
+
     } catch (error) {
-      console.error("请求流错误:", error);
-      setSteps(prevSteps => [...prevSteps, { type: 'error', content: '连接服务器或处理请求失败。' }]);
+      console.error("请求失败:", error);
+      const errorMessage = error instanceof Error ? error.message : '连接服务器或处理请求失败。';
+      setSteps(prevSteps => [...prevSteps, { type: 'error', content: errorMessage }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const renderStep = (step: AgentStep, index: number): JSX.Element | null => {
+  // renderStep 函数简化，因为它不再需要处理 'thought' 和 'observation'
+  const renderStep = (step: AgentStep, index: number): JSX.Element => {
     switch (step.type) {
-      case 'thought':
-        return <div key={index} className="step thought"><strong>🤔 思考:</strong> <pre>{step.content}</pre></div>;
-      case 'observation':
-        return <div key={index} className="step observation"><strong>👀 观察:</strong> <pre>{step.content}</pre></div>;
+      case 'info':
+        return <div key={index} className="step info"><strong>ℹ️ 状态:</strong> {step.content}</div>;
       case 'final_output':
-        return <div key={index} className="step final"><strong>✅ 最终答案:</strong> {step.content}</div>;
+        return <div key={index} className="step final"><strong>✅ 结果:</strong> {step.content}</div>;
       case 'error':
         return <div key={index} className="step error"><strong>❌ 错误:</strong> {step.content}</div>;
-      default:
-        return null;
     }
   };
 
@@ -134,8 +121,8 @@ export function AgentPage(): JSX.Element {
         </div>
 
         <div className="log-window">
-          {steps.filter(step => step.type !== 'final_image').map(renderStep)}
-          {isLoading && <div className="step loading">智能体正在工作中...</div>}
+          {steps.map(renderStep)}
+          {/* 这里不再需要单独的 loading 状态，因为它已被整合到 steps 中 */}
         </div>
 
         <form onSubmit={handleSubmit} className="input-form">
@@ -143,7 +130,7 @@ export function AgentPage(): JSX.Element {
           <input
             type="text"
             value={prompt}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+            onChange={(e: ChangeeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
             placeholder="您想对图片做什么？"
             disabled={isLoading}
           />

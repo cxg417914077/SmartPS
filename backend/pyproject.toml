@@ -23,4 +23,5 @@ dependencies = [
     "aiohttp>=3.12.15",
     "pyjwt>=2.10.1",
     "redis>=6.4.0",
+    "pydantic-ai>=0.8.0",
 ]

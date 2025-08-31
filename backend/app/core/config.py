@@ -76,5 +76,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str
 
+    MODELSCOPE_API_URL: str
+    MODELSCOPE_API_KEY: str
+
+    HOST: str
+
 
 settings = Settings()  # type: ignore
