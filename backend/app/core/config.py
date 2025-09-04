@@ -1,5 +1,8 @@
+import contextvars
 import secrets
-from typing import Annotated, Any, Literal
+import logging
+import datetime
+from typing import Annotated, Any, Literal, ClassVar
 
 from pydantic import (
     AnyUrl,
@@ -80,6 +83,15 @@ class Settings(BaseSettings):
     MODELSCOPE_API_KEY: str
 
     HOST: str
+
+    LOG_FILE: ClassVar[str] = datetime.datetime.now().strftime("%Y-%m-%d") + ".log"
+    LOG_LEVEL: ClassVar[int] = logging.INFO
+    LOG_PATH: ClassVar[str] = f"/tmp/{LOG_FILE}"
+
+    REQUEST_ID_CONTEXT: ClassVar[contextvars.ContextVar] = contextvars.ContextVar("request-id", default="-")
+
+    WechatAppId: str
+    WechatAppSecret: str
 
 
 settings = Settings()  # type: ignore

@@ -3,7 +3,6 @@ import secrets
 from typing import Optional
 from backend.app.models.user import UserTable, UserLogin, User
 from sqlmodel import Session, select
-from pydantic import EmailStr
 
 
 class UserCRUD:
@@ -27,20 +26,19 @@ class UserCRUD:
         return pwdhash == stored_password_hash
 
     @staticmethod
-    def create_user(db: Session, user_login: UserLogin) -> User:
-        password_hash, salt = UserCRUD.hash_password(user_login.password)
-        user = UserTable(email=user_login.email, password_hash=f"{password_hash}:{salt}")
+    def create_user(db: Session, phone: str) -> User:
+        user = UserTable(phone=phone)
         db.add(user)
         db.commit()
         db.refresh(user)
         return user
 
     @staticmethod
-    def get_user_by_email(db: Session, email: EmailStr) -> Optional[UserTable]:
+    def get_user_by_phone(db: Session, phone: str) -> Optional[UserTable]:
         """
-        根据邮箱查询用户
+        根据手机号查询用户
         """
-        statement = select(UserTable).where(UserTable.email == email)
+        statement = select(UserTable).where(UserTable.phone == phone)
         return db.exec(statement).first()
 
     @staticmethod
@@ -52,11 +50,11 @@ class UserCRUD:
         return db.exec(statement).first()
 
     @staticmethod
-    def authenticate_user(db: Session, email: EmailStr, password: str) -> Optional[UserTable]:
+    def authenticate_user(db: Session, phone: str, password: str) -> Optional[UserTable]:
         """
         验证用户身份
         """
-        user = UserCRUD.get_user_by_email(db, email)
+        user = UserCRUD.get_user_by_phone(db, phone)
         if not user:
             return None
         

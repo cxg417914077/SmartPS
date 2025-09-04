@@ -71,8 +71,14 @@ async def image_process_agent(
     img.close()
 
     image_url = f"{settings.HOST}/images/{image_path}"
+    # 将width、height按比例缩放到小于等于1024
+    max_size = 1664
+    if width > max_size or height > max_size:
+        ratio = min(max_size / width, max_size / height)
+        width = int(width * ratio)
+        height = int(height * ratio)
 
-    image_data = image_edit(image_url, prompt, f"{width}x{height}")
+    image_data = await image_edit(image_url, prompt, f"{width}x{height}")
     os.remove(file_path)
 
     return {"image": image_data}
