@@ -31,7 +31,7 @@ class _WxClient:
                 async with ClientSession(timeout=ClientTimeout(total=3)) as sess:
                     async with sess.request(method, url, **kwargs) as resp:
                         assert resp.status == 200, "url invalid"
-                        return await resp.read()
+                        return await resp.json()
             except Exception as e:
                 try_times -= 1
                 if try_times <= 0:
@@ -43,8 +43,7 @@ class _WxClient:
         return await self.request_sth("GET", url)
 
     async def post_sth(self, url, json_data):
-        resp = await self.request_sth("POST", url, json=json_data)
-        return json.loads(resp)
+        return await self.request_sth("POST", url, json=json_data)
 
     async def get_access_token(self) -> WeChatAccessToken | None:
         """
