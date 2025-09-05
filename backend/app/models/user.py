@@ -10,14 +10,8 @@ class User(SQLModel):
         nullable=False,
         max_length=20
     )
-
-
-class UserLogin(User):
-    password: str = Field(nullable=False)
-
-
-class UserRegister(UserLogin):
-    code: str = Field(nullable=False)
+    # 积分
+    score: int = Field(default=30, sa_column_kwargs={"server_default": "30"})
 
 
 class UserTable(User, table=True):

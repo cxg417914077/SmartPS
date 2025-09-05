@@ -1,8 +1,11 @@
 import hashlib
 import secrets
 from typing import Optional
-from backend.app.models.user import UserTable, UserLogin, User
-from sqlmodel import Session, select
+
+from backend.app.api.deps import get_db
+from backend.app.core.db import engine
+from backend.app.models.user import UserTable, User
+from sqlmodel import Session, select, update
 
 
 class UserCRUD:
@@ -63,3 +66,21 @@ class UserCRUD:
         if UserCRUD.verify_password(stored_hash, salt, password):
             return user
         return None
+
+    @staticmethod
+    def update_user_score(db: Session, user_id: int, score: int):
+        """
+        更新用户积分
+        """
+        sql = update(UserTable).where(UserTable.id == user_id).values(score=score)
+        db.exec(sql)
+        db.commit()
+
+    @staticmethod
+    def reset_users_score():
+        """
+        重置用户积分为30分
+        """
+        with Session(engine) as db:
+            sql = update(UserTable).values(score=30)
+            db.exec(sql)

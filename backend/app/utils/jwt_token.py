@@ -2,6 +2,7 @@ import jwt
 import datetime
 from typing import Dict, Any
 from fastapi import HTTPException, status
+from backend.app.models.user import User
 
 from backend.app.core.config import settings
 
@@ -13,11 +14,11 @@ def generate_jwt_token(payload: Dict[str, Any], expires_in: int = 3600 * 24) -> 
     return jwt.encode(token_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def verify_jwt_token(token: str) -> Dict[str, Any]:
+def verify_jwt_token(token: str) -> User:
     """验证 JWT token"""
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        return payload
+        return User.model_validate(payload)
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

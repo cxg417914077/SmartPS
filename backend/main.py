@@ -1,7 +1,13 @@
+from typing import Annotated
+
 from dotenv import load_dotenv
 import sys
 import os
 from pathlib import Path
+from contextlib import asynccontextmanager
+
+from backend.app.api.deps import SessionDep, userDeps
+from backend.app.crud.user import UserCRUD
 
 # 添加系统目录
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,14 +18,38 @@ from fastapi.responses import FileResponse
 from backend.app.core.config import settings
 from PIL import Image
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+from datetime import timezone, timedelta
+from backend.logger import logger
+
+beijing_tz = timezone(timedelta(hours=8))
+
 
 # Import auth modules
 from app.api.routes.auth import router as auth_router
 
 # 1. 加载环境变量
 load_dotenv(".env")
+# 创建调度器实例
+scheduler = AsyncIOScheduler()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler.add_job(
+        UserCRUD.reset_users_score,
+        trigger=CronTrigger.from_crontab("0 0 * * *", timezone=beijing_tz),
+        id="reset_users_score",
+        name="Reset Users score",
+        replace_existing=True,
+    )
+    scheduler.start()
+    yield
+    scheduler.shutdown()
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 # 定义存储上传图片的目录
 UPLOAD_DIRECTORY = "uploaded_images"
@@ -53,12 +83,18 @@ async def get_image(filename: str):
 # 修改接口以接收文件和表单数据
 @app.post("/agent/image_process")
 async def image_process_agent(
+    db: SessionDep,
+    user: userDeps,
     prompt: str = Form(...),
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
 ):
     """
     接收图片和指令，通过 Agent 处理，并返回图片base64。
     """
+    logger.info(f"当前用户信息{user}")
+    if user.score < 10:
+        raise HTTPException(status_code=400, detail="积分不足")
+
     image_bytes = await file.read()
     # 保存到本地的临时文件
     image_path = f"temp_{file.filename}"
@@ -80,7 +116,7 @@ async def image_process_agent(
 
     image_data = await image_edit(image_url, prompt, f"{width}x{height}")
     os.remove(file_path)
-
+    UserCRUD.update_user_score(db, user.id, -10)
     return {"image": image_data}
 
 
