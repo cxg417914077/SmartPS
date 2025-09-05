@@ -6,11 +6,10 @@ import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from backend.app.api.deps import SessionDep, userDeps
-from backend.app.crud.user import UserCRUD
-
 # 添加系统目录
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from backend.app.api.deps import SessionDep, userDeps
+from backend.app.crud.user import UserCRUD
 from backend.agent.tools import image_edit
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
