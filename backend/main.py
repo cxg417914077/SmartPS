@@ -102,7 +102,7 @@ async def image_process_agent(
     image_data = base64.b64decode(image_request.image_base64)
     image = Image.open(BytesIO(image_data))
     width, height = image.size
-    temp_file_name = tempfile.mktemp(suffix='.png', prefix='temp_')
+    temp_file_name = tempfile.mktemp(suffix='.png', prefix='temp_', dir=UPLOAD_DIRECTORY)
     image.save(temp_file_name)
     image.close()
 
