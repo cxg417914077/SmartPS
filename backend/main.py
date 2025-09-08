@@ -106,7 +106,7 @@ async def image_process_agent(
     image.save(temp_file_name)
     image.close()
 
-    image_url = f"{settings.HOST}/images/{temp_file_name}"
+    image_url = f"{settings.HOST}/images/{os.path.basename(temp_file_name)}"
     # 将width、height按比例缩放到小于等于1664
     max_size = 1664
     if width > max_size or height > max_size:
