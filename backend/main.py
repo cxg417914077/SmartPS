@@ -1,4 +1,7 @@
-from typing import Annotated
+import base64
+import tempfile
+from io import BytesIO
+from typing import Annotated, Optional
 
 from dotenv import load_dotenv
 import sys
@@ -78,43 +81,40 @@ async def get_image(filename: str):
     return FileResponse(file_path)
 
 
+class ImageProcessRequest:
+    prompt: str
+    image_base64: Optional[str]
+
+
 # --- API 路由 ---
 # 修改接口以接收文件和表单数据
-@app.post("/agent/image_process")
+@app.post("/agent/image_process_wx")
 async def image_process_agent(
     db: SessionDep,
     user: userDeps,
-    prompt: str = Form(...),
-    file: UploadFile = File(...),
+    image_request: ImageProcessRequest,
 ):
-    """
-    接收图片和指令，通过 Agent 处理，并返回图片base64。
-    """
     logger.info(f"当前用户信息{user}")
     if user.score < 10:
         raise HTTPException(status_code=400, detail="积分不足")
 
-    image_bytes = await file.read()
-    # 保存到本地的临时文件
-    image_path = f"temp_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIRECTORY, image_path)
-    with open(file_path, "wb") as f:
-        f.write(image_bytes)
+    image_data = base64.b64decode(image_request.image_base64)
+    image = Image.open(BytesIO(image_data))
+    width, height = image.size
+    temp_file_name = tempfile.mktemp(suffix='.png', prefix='temp_')
+    image.save(temp_file_name)
+    image.close()
 
-    img = Image.open(file_path)
-    width, height = img.size
-    img.close()
-
-    image_url = f"{settings.HOST}/images/{image_path}"
-    # 将width、height按比例缩放到小于等于1024
+    image_url = f"{settings.HOST}/images/{temp_file_name}"
+    # 将width、height按比例缩放到小于等于1664
     max_size = 1664
     if width > max_size or height > max_size:
         ratio = min(max_size / width, max_size / height)
         width = int(width * ratio)
         height = int(height * ratio)
 
-    image_data = await image_edit(image_url, prompt, f"{width}x{height}")
-    os.remove(file_path)
+    image_data = await image_edit(image_url, image_request.prompt, f"{width}x{height}")
+    os.remove(temp_file_name)
     UserCRUD.update_user_score(db, user.id, -10)
     return {"image": image_data}
 
