@@ -1,7 +1,8 @@
 import base64
 import tempfile
 from io import BytesIO
-from typing import Annotated, Optional
+from typing import Optional
+from pydantic import BaseModel
 
 from dotenv import load_dotenv
 import sys
@@ -81,7 +82,7 @@ async def get_image(filename: str):
     return FileResponse(file_path)
 
 
-class ImageProcessRequest:
+class ImageProcessRequest(BaseModel):
     prompt: str
     image_base64: Optional[str]
 
