@@ -22,9 +22,10 @@ class UserTable(User, table=True):
 class History(SQLModel, table=True):
     __table_args__ = {'extend_existing': True}
     id: Optional[int] = Field(default=None, primary_key=True)
-    status: bool = Field(default=False)
+    job_id: str = Field(nullable=False, max_length=36, index=True, unique=True)
+    status: str = Field(default="PENDING")
     user_id: int = Field(nullable=False)
-    task_id: str = Field(nullable=False, max_length=256, index=True)
+    task_id: Optional[str] = Field(default=None, max_length=256, index=True)
     prompt: str = Field(nullable=False, default="", max_length=2048)
     upload_image: str = Field(default="", description="用户上传的图片")
     image_data: str = Field(sa_column_kwargs={"server_default": ""}, description="生成的图片")

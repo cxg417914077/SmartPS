@@ -1,11 +1,13 @@
 import sys
 import os
+import asyncio
 from pathlib import Path
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 # 添加系统目录
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from backend.app.core.worker import image_processing_worker
 from backend.app.crud.user import crud_user
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +33,9 @@ def load_routes():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_routes()
+    # 启动后台任务
+    worker_task = asyncio.create_task(image_processing_worker())
+
     scheduler.add_job(
         crud_user.reset_users_score,
         trigger=CronTrigger.from_crontab("0 0 * * *", timezone=beijing_tz),
@@ -40,6 +45,9 @@ async def lifespan(app: FastAPI):
     )
     scheduler.start()
     yield
+    # 应用关闭时取消后台任务
+    worker_task.cancel()
+    await worker_task
     scheduler.shutdown()
 
 

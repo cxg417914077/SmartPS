@@ -55,6 +55,8 @@ class QwenClient:
                     result.raise_for_status()
                     data = await result.json()
 
+                    await crud_history.update(_id, status=data["task_status"])
+
                     if data["task_status"] == "SUCCEED":
                         # 获取生成的图片
                         async with session.get(data["output_images"][0]) as image_response:
@@ -64,7 +66,7 @@ class QwenClient:
                             buffered = BytesIO()
                             image.save(buffered, format=image.format)
                             image_data = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                            crud_history.update(_id, image_data=image_data, status=True)
+                            await crud_history.update(_id, image_data=image_data)
                             return image_data
                     elif data["task_status"] == "FAILED":
                         raise Exception("Image Generation Failed.")

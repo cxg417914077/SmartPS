@@ -1,19 +1,22 @@
 import os
+import uuid
+import json
 from typing import Optional
 from pydantic import BaseModel
 from backend.app.core.config import settings
 
-from fastapi import HTTPException, APIRouter, BackgroundTasks
-from fastapi.responses import  FileResponse
+from fastapi import HTTPException, APIRouter
+from fastapi.responses import FileResponse
 
-from backend.app.crud.history import crud_history
 from backend.app.crud.user import crud_user
 from backend.app.models.user import History
 from backend.app.utils.image_tools import save_image_from_base64, scale_image_dimensions
 from backend.main import UPLOAD_DIRECTORY
 from backend.app.api.deps import SessionDep, userDeps
 from backend.logger import logger
-from backend.app.utils.qwen_image import qwen_client
+from backend.app.core.aio_redis import aio_redis_client
+from backend.app.core.worker import REDIS_QUEUE_KEY
+from backend.app.crud.history import crud_history
 
 
 router = APIRouter()
@@ -46,7 +49,6 @@ async def image_process_agent(
     user: userDeps,
     session: SessionDep,
     image_request: ImageProcessRequest,
-    background_tasks: BackgroundTasks,
 ):
     user = await crud_user.get(session, user.id)
     logger.info(f"当前用户信息{user}")
@@ -56,23 +58,35 @@ async def image_process_agent(
     image_info = save_image_from_base64(image_request.image_base64, UPLOAD_DIRECTORY)
     image_url = f"{settings.HOST}/images/{os.path.basename(image_info.file_name)}"
     image_size = scale_image_dimensions(image_info.width, image_info.height)
+    job_id = str(uuid.uuid4())
 
-    task_id = await qwen_client.generate(image_request.prompt, image_url, image_size)
-    # 写入历史记录
-    history = await crud_history.create(
-        session,
-        user_id=user.id,
-        task_id=task_id,
-        prompt=image_request.prompt,
-        upload_image=image_request.image_base64,
-    )
-    # 后台任务更新结果
-    background_tasks.add_task(qwen_client.result, task_id, history.id)
-    return {"task_id": task_id}
+    task_data = {
+        "job_id": job_id,
+        "user_id": user.id,
+        "prompt": image_request.prompt,
+        "image_base64": image_request.image_base64,
+        "image_url": image_url,
+        "image_size": image_size,
+    }
+
+    await aio_redis_client.lpush(REDIS_QUEUE_KEY, json.dumps(task_data))
+
+    return {"job_id": job_id}
+
+from pydantic import BaseModel
+
+class HistoryResponse(BaseModel):
+    id: Optional[int]
+    job_id: str
+    status: str
+    user_id: int
+    task_id: Optional[str]
+    prompt: str
+    image_data: str
 
 
 class ImageResult(BaseModel):
-    data: History
+    data: HistoryResponse
 
 
 @router.get("/agent/image_process_wx/{task_id}", response_model=ImageResult)
