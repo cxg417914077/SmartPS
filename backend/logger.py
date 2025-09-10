@@ -83,8 +83,8 @@ logging_config = {
 
 logging.config.dictConfig(logging_config)
 logging.Formatter.converter, logger = beijing_time_converter, logging.getLogger("default")
-logging.getLogger("botocore").setLevel(logging.WARNING)
-logging.getLogger("boto3").setLevel(logging.WARNING)
-logging.getLogger("aioboto3").setLevel(logging.WARNING)
-logging.getLogger("elasticsearch").setLevel(logging.WARNING)
-logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+logging.getLogger("botocore").setLevel(logging.INFO)
+logging.getLogger("boto3").setLevel(logging.INFO)
+logging.getLogger("aioboto3").setLevel(logging.INFO)
+logging.getLogger("elasticsearch").setLevel(logging.INFO)
+logging.getLogger("uvicorn.access").setLevel(logging.INFO)

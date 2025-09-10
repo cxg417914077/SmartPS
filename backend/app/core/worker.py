@@ -26,6 +26,7 @@ async def image_processing_worker():
                     session,
                     user_id=task["user_id"],
                     job_id=task["job_id"],
+                    task_id="",
                     prompt=task["prompt"],
                     upload_image=task["image_base64"],
                 )
