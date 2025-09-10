@@ -1,18 +1,13 @@
 from typing import Annotated, Generator
 from sqlmodel import Session
 from fastapi import Depends
-from backend.app.core.db import engine
+from backend.app.core.db import get_session
 from fastapi.security import OAuth2PasswordBearer
 from backend.app.models.user import User
 from backend.app.utils.jwt_token import verify_jwt_token
 
 
-def get_db() -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        yield session
-
-
-SessionDep = Annotated[Session, Depends(get_db)]
+SessionDep = Annotated[Session, Depends(get_session)]
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="loginByPhone")
 

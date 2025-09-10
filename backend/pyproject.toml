@@ -26,4 +26,6 @@ dependencies = [
     "pydantic-ai>=0.8.0",
     "aioredis>=2.0.1",
     "apscheduler>=3.11.0",
+    "asyncpg>=0.30.0",
+    "greenlet>=3.2.4",
 ]
