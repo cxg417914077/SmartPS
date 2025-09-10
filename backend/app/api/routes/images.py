@@ -50,8 +50,8 @@ async def image_process_agent(
 ):
     user = await crud_user.get(session, user.id)
     logger.info(f"当前用户信息{user}")
-    if user.score < 10:
-        raise HTTPException(status_code=400, detail="积分不足")
+    # if user.score < 10:
+    #     raise HTTPException(status_code=400, detail="积分不足")
 
     image_info = save_image_from_base64(image_request.image_base64, UPLOAD_DIRECTORY)
     image_url = f"{settings.HOST}/images/{os.path.basename(image_info.file_name)}"

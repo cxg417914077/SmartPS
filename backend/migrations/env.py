@@ -23,7 +23,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 # 设置目标模型
-from backend.app.models.user import SQLModel, UserTable
+from backend.app.models.user import SQLModel, UserTable, History
 target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -65,7 +65,12 @@ def run_migrations_online() -> None:
     """
     # 动态设置数据库URL
     from backend.app.core.config import settings
-    config.set_main_option('sqlalchemy.url', str(settings.SQLALCHEMY_DATABASE_URI))
+    # 修改为使用同步数据库URL
+    synchronous_url = str(settings.SQLALCHEMY_DATABASE_URI).replace(
+        "postgresql+asyncpg", "postgresql+psycopg2"
+    )
+
+    config.set_main_option('sqlalchemy.url', synchronous_url)
 
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
