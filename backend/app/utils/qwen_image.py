@@ -8,6 +8,7 @@ from PIL import Image
 from backend.app.core.config import settings
 from backend.app.crud.history import crud_history
 from backend.app.utils.image_tools import ImageSize
+from backend.app.core.db import AsyncSessionLocal
 from backend.logger import logger
 
 
@@ -47,33 +48,34 @@ class QwenClient:
                 return task_id
 
     async def result(self, task_id: str, _id: int) -> str:
-        async with aiohttp.ClientSession() as session:
-            while True:
-                async with session.get(
-                        f"{settings.MODELSCOPE_API_URL}v1/tasks/{task_id}",
-                        headers={**self.headers, "X-ModelScope-Task-Type": "image_generation"},
-                ) as result:
-                    result.raise_for_status()
-                    data = await result.json()
+        async with AsyncSessionLocal() as db:
+            async with aiohttp.ClientSession() as session:
+                while True:
+                    async with session.get(
+                            f"{settings.MODELSCOPE_API_URL}v1/tasks/{task_id}",
+                            headers={**self.headers, "X-ModelScope-Task-Type": "image_generation"},
+                    ) as result:
+                        result.raise_for_status()
+                        data = await result.json()
 
-                    await crud_history.update(_id, status=data["task_status"])
+                        await crud_history.update(db, _id, status=data["task_status"])
 
-                    if data["task_status"] == "SUCCEED":
-                        # 获取生成的图片
-                        async with session.get(data["output_images"][0]) as image_response:
-                            image_response.raise_for_status()
-                            image_content = await image_response.read()
-                            image = Image.open(BytesIO(image_content))
-                            buffered = BytesIO()
-                            image.save(buffered, format=image.format)
-                            image_data = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                            await crud_history.update(_id, image_data=image_data)
-                            return image_data
-                    elif data["task_status"] == "FAILED":
-                        raise Exception("Image Generation Failed.")
+                        if data["task_status"] == "SUCCEED":
+                            # 获取生成的图片
+                            async with session.get(data["output_images"][0]) as image_response:
+                                image_response.raise_for_status()
+                                image_content = await image_response.read()
+                                image = Image.open(BytesIO(image_content))
+                                buffered = BytesIO()
+                                image.save(buffered, format=image.format)
+                                image_data = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                                await crud_history.update(db, _id, image_data=image_data)
+                                return image_data
+                        elif data["task_status"] == "FAILED":
+                            raise Exception("Image Generation Failed.")
 
-                # 等待5秒后继续轮询
-                await asyncio.sleep(5)
+                    # 等待5秒后继续轮询
+                    await asyncio.sleep(5)
 
 
 qwen_client = QwenClient()
