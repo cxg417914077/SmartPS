@@ -28,7 +28,7 @@ class ImageProcessRequest(BaseModel):
 
 
 class ImageProcessResponse(BaseModel):
-    task_id: str
+    job_id: str
 
 
 @router.get("/images/{filename}")
@@ -90,12 +90,12 @@ class ImageResult(BaseModel):
     data: HistoryResponse
 
 
-@router.get("/agent/image_process_wx/{task_id}", response_model=ImageResult)
+@router.get("/agent/image_process_wx/{job_id}", response_model=ImageResult)
 async def get_image_process_result(
-        task_id: str,
+        job_id: str,
         session: SessionDep
 ):
-    history = await crud_history.get_by(session, task_id=task_id)
+    history = await crud_history.get_by(session, job_id=job_id)
     return {"data": history}
 
 
