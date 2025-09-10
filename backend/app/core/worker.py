@@ -35,11 +35,14 @@ async def image_processing_worker():
                 task_id = await qwen_client.generate(
                     task["prompt"], task["image_url"], task["image_size"]
                 )
+                await crud_history.update(
+                    session, history.id, task_id=task_id
+                )
 
                 # 3. 获取结果并更新历史记录
                 await qwen_client.result(task_id, history.id)
 
-                logger.info(f"Task {task['task_id']} completed successfully.")
+                logger.info(f"Task with job_id {task["job_id"]} completed successfully.")
 
         except asyncio.CancelledError:
             logger.info("Image processing worker is shutting down.")

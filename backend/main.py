@@ -1,6 +1,7 @@
 import sys
 import os
 import asyncio
+import time
 from pathlib import Path
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
@@ -9,12 +10,14 @@ from contextlib import asynccontextmanager
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.app.core.worker import image_processing_worker
 from backend.app.crud.user import crud_user
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import timezone, timedelta
+
+from backend.logger import logger
 
 beijing_tz = timezone(timedelta(hours=8))
 
@@ -47,11 +50,26 @@ async def lifespan(app: FastAPI):
     yield
     # 应用关闭时取消后台任务
     worker_task.cancel()
-    await worker_task
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        logger.info("Worker task cancelled successfully.")
     scheduler.shutdown()
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    logger.info(
+        f'{request.method} {request.url.path} - {response.status_code} - {process_time:.4f}s'
+    )
+    return response
 
 
 # 定义存储上传图片的目录
