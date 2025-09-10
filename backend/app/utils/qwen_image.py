@@ -25,6 +25,7 @@ class QwenClient:
     }
 
     async def generate(self, prompt: str, image_url: str, image_size: ImageSize) -> str:
+        image_size = ImageSize.model_validate(image_size)
         async with aiohttp.ClientSession() as session:
             async with session.post(
                     f"{settings.MODELSCOPE_API_URL}v1/images/generations",
