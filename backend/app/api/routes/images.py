@@ -66,7 +66,7 @@ async def image_process_agent(
         "prompt": image_request.prompt,
         "image_base64": image_request.image_base64,
         "image_url": image_url,
-        "image_size": image_size,
+        "image_size": image_size.model_dump(),
     }
 
     await aio_redis_client.lpush(REDIS_QUEUE_KEY, json.dumps(task_data))
