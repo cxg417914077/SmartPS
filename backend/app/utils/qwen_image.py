@@ -58,8 +58,6 @@ class QwenClient:
                         result.raise_for_status()
                         data = await result.json()
 
-                        await crud_history.update(db, _id, status=data["task_status"])
-
                         if data["task_status"] == "SUCCEED":
                             # 获取生成的图片
                             async with session.get(data["output_images"][0]) as image_response:
@@ -69,10 +67,10 @@ class QwenClient:
                                 buffered = BytesIO()
                                 image.save(buffered, format=image.format)
                                 image_data = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                                await crud_history.update(db, _id, image_data=image_data)
+                                await crud_history.update(db, _id, image_data=image_data, status=data["task_status"])
                                 return image_data
-                        elif data["task_status"] == "FAILED":
-                            raise Exception("Image Generation Failed.")
+                        else:
+                            await crud_history.update(db, _id, status=data["task_status"])
 
                     # 等待5秒后继续轮询
                     await asyncio.sleep(5)
