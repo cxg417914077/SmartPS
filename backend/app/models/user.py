@@ -24,7 +24,7 @@ class History(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     job_id: str = Field(nullable=False, max_length=36, index=True, unique=True)
     status: str = Field(default="PENDING")
-    user_id: int = Field(nullable=False)
+    user_id: int = Field(nullable=False, index=True)
     task_id: Optional[str] = Field(default=None, max_length=256, index=True)
     prompt: str = Field(nullable=False, default="", max_length=2048)
     upload_image: str = Field(default="", description="用户上传的图片")

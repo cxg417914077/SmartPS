@@ -3,6 +3,7 @@ import uuid
 import json
 from typing import Optional
 from pydantic import BaseModel
+from sqlalchemy import select
 from backend.app.core.config import settings
 
 from fastapi import HTTPException, APIRouter
@@ -104,8 +105,13 @@ async def get_image_process_result(
 async def get_history(
         user: userDeps,
         session: SessionDep,
+        page: int = 1,
+        size: int = 5
 ):
     """
-    获取历史记录
+    获取历史记录（分页）
     """
-    return await crud_history.get_multi_by(session, user_id=user.id)
+    offset = (page - 1) * size
+    stmt = select(History).where(History.user_id == user.id).order_by(History.id.desc()).offset(offset).limit(size)
+    result = await session.execute(stmt)
+    return result.scalars().all()
